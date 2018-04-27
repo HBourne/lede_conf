@@ -1,0 +1,16 @@
+
+config shadowsocks-libev
+	option local_port '1080'
+	option timeout '60'
+	option ignore_list '/dev/null'
+	option tunnel_enable '1'
+	option tunnel_port '5300'
+	option tunnel_forward '8.8.4.4:53'
+	option server '39.106.153.216'
+	option server_port '8388'
+	option encrypt_method 'chacha20'
+	option udp_mode '1'
+	option lan_ac_mode '0'
+	option ipt_ext '-m set --match-set vpn dst'
+	option enable '1'
+

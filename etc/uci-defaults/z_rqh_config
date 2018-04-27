@@ -1,0 +1,58 @@
+#!/bin/sh
+
+# Set secondary network interface
+uci batch <<EOF
+set network.lan.ipaddr='172.16.111.1'
+commit network
+EOF
+
+# Set wifi
+uci  batch <<EOF
+set wireless.radio0.disabled=0
+set wireless.default_radio0.ssid=SKI-2.4G
+set wireless.default_radio0.key=rqhniubi
+set wireless.default_radio0.encryption=psk2
+commit wireless
+EOF
+
+# Set shadowsocks
+# uci batch <<EOF
+# set shadowsocks-libev.@shadowsocks-libev[0].enable=1
+# set shadowsocks-libev.@shadowsocks-libev[0].ipt_ext='-m set --match-set vpn dst'
+# set shadowsocks-libev.@shadowsocks-libev[0].encrypt_method=chacha20
+# set shadowsocks-libev.@shadowsocks-libev[0].server_port=8388
+# set shadowsocks-libev.@shadowsocks-libev[0].server=39.106.153.216
+# set shadowsocks-libev.@shadowsocks-libev[0].tunnel_port=5300
+# set shadowsocks-libev.@shadowsocks-libev[0].tunnel_forward=8.8.4.4:53
+# EOF
+
+# Set timezone
+grep zonename /etc/config/system > /dev/null || uci batch <<EOF
+set system.@system[0].zonename="Asia/Shanghai"
+set system.@system[0].timezone="CST-8"
+commit system
+EOF
+
+# Add dnsmasq ipset
+grep '^conf-dir' /etc/dnsmasq.conf || echo 'conf-dir=/etc/dnsmasq.d' >> /etc/dnsmasq.conf
+
+# Dnsmasq Allow query local dns
+grep nonegcache /etc/config/dhcp > /dev/null && uci batch <<EOF
+set dhcp.@dnsmasq[0].rebind_protection=0
+delete dhcp.@dnsmasq[0].filterwin2k
+delete dhcp.@dnsmasq[0].nonegcache
+delete dhcp.@dnsmasq[0].rebind_localhost
+commit dhcp
+EOF
+
+# Modify firewall.user
+grep vpn /etc/firewall.user || echo 'ipset create -exist vpn hash:net' >> /etc/firewall.user
+
+# Add ssh key & change permission
+echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDC1n4lTSttdmDrqcRAccPfarHUGjgh2gzGOCFrNDnKZ9f2pDkKwafEBHn/Xv4VOBkjkDHpp+5mB8NzYwrcGg7Hu5hV1yfpyMWl2fydjxPnrYpahqJnouOj5hpulALlHjFV8Ihw8ZIkZCzU4MIe5HHLRic+dc1TcpS27YKsTVBCUmiI51N6ZyoV8CcODY8do5Y4vUo/OVsbOJX4K1q+5YkXX87bgG6QcFUtyjVNrS/0R/SP2uSRbd7GA7b9ShJf2BvEprLjM6EXKWo6YjGnTjlO2P4ta8cZ+245k4o2XmGEcBDYDjZ3SAFJ1/VyeMThq2R/VyT9mBLXDoWJqE8OC+Vd hank_ren@rqh.ski' >> /etc/dropbear/authorized_keys
+
+chmod 600 /etc/dropbear/authorized_keys
+chown root:root /etc/dropbear/authorized_keys
+
+# Set password
+(echo "wr720n"; sleep 1; echo "wr720n") | passwd root
